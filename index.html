@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Studio V3</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f0e8;
+  --bg2:#ede8df;
+  --bg3:#e4ddd2;
+  --white:#fdfaf5;
+  --card:#faf7f2;
+  --border:#d8d0c4;
+  --border2:#c8bfb0;
+  --acc:#ff4820;
+  --acc2:#ff7043;
+  --acc-light:#fff0ec;
+  --acc-mid:#ffd4ca;
+  --yellow:#f7d900;
+  --yellow2:#ffec40;
+  --yellow-light:#fffbe0;
+  --teal:#00a896;
+  --teal-light:#e0f7f5;
+  --blue:#2563eb;
+  --blue-light:#eff6ff;
+  --ink:#1a1208;
+  --ink2:#3d3320;
+  --ink3:#6b5e4a;
+  --ink4:#9c8e7a;
+  --ink5:#bdb0a0;
+  --grad:linear-gradient(135deg,#ff4820,#ff7043);
+  --grad-y:linear-gradient(135deg,#f7d900,#ffec40);
+  --shadow:0 2px 12px rgba(26,18,8,.08);
+  --shadow-lg:0 8px 32px rgba(26,18,8,.12);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* Grain texture overlay */
+body::after{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:999;opacity:.4;
+}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  background:var(--ink);
+  padding:28px 20px;display:flex;flex-direction:column;gap:28px;
+  position:sticky;top:0;height:100vh;overflow-y:auto;z-index:50;
+}
+.brand{padding:0 0 8px}
+.brand-top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.brand-icon{
+  width:38px;height:38px;background:var(--yellow);border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+  box-shadow:4px 4px 0 var(--acc);
+}
+.brand-name{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.brand-ver{font-family:'DM Mono',monospace;font-size:9px;color:#6b6050;letter-spacing:3px;text-transform:uppercase}
+
+/* Phase nav */
+.nav-label{font-family:'DM Mono',monospace;font-size:9px;color:#4a4035;letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;padding:0 4px}
+.nav-item{
+  display:flex;align-items:center;gap:12px;padding:10px 12px;
+  border-radius:10px;cursor:pointer;transition:all .15s;
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:600;
+  color:#5a5040;border:none;background:transparent;width:100%;text-align:left;
+  letter-spacing:-.2px;
+}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#c0b8a8}
+.nav-item.active{background:var(--yellow);color:var(--ink)}
+.nav-item.done{color:#4a4035}
+.nav-item.done .nav-num{background:rgba(0,168,150,.15);border-color:#00a896;color:#00a896}
+.nav-item.active .nav-num{background:var(--ink);border-color:var(--ink);color:var(--yellow)}
+.nav-num{
+  width:24px;height:24px;border-radius:7px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:10px;color:#5a5040;font-weight:500;
+  flex-shrink:0;transition:all .2s;
+}
+
+/* History */
+.hist-section{margin-top:auto;padding-top:20px;border-top:1px solid rgba(255,255,255,.06)}
+.hist-list{display:flex;flex-direction:column;gap:5px}
+.hist-item{
+  padding:10px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);
+  border-radius:8px;cursor:pointer;transition:all .15s;
+}
+.hist-item:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.12)}
+.hist-item-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:#c0b8a8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+.hist-item-meta{font-family:'DM Mono',monospace;font-size:9px;color:#4a4035}
+.hist-empty{font-family:'DM Mono',monospace;font-size:10px;color:#3a3028;padding:6px 4px;letter-spacing:.5px}
+
+/* ── MAIN ── */
+.main{display:flex;flex-direction:column;min-height:100vh;background:var(--bg)}
+
+.topbar{
+  padding:20px 40px;border-bottom:2px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--white);
+  position:sticky;top:0;z-index:40;
+}
+.topbar-left{display:flex;align-items:baseline;gap:16px}
+.topbar-left h2{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--ink)}
+.topbar-left p{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink4);letter-spacing:.5px}
+
+.status-pill{
+  display:flex;align-items:center;gap:8px;padding:7px 16px;
+  background:var(--ink);border-radius:20px;
+  font-family:'DM Mono',monospace;font-size:10px;color:#8a7e6a;letter-spacing:.5px;
+}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--yellow);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.5)}}
+
+.workspace{padding:36px 40px;flex:1;max-width:860px}
+
+/* ── PANELS ── */
+.panel{display:none;animation:fadeUp .25s ease}
+.panel.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.panel-head{margin-bottom:32px}
+.panel-head h2{
+  font-family:'Syne',sans-serif;font-size:32px;font-weight:800;
+  letter-spacing:-1px;line-height:1.1;color:var(--ink);
+}
+.panel-head h2 span{color:var(--acc)}
+.panel-head p{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink4);letter-spacing:1px;margin-top:8px;text-transform:uppercase}
+
+/* ── FORM ── */
+.fg{margin-bottom:18px}
+.fg label{
+  display:block;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);
+  letter-spacing:2.5px;text-transform:uppercase;margin-bottom:8px;font-weight:500;
+}
+input,select,textarea{
+  width:100%;background:var(--white);border:2px solid var(--border);border-radius:10px;
+  padding:12px 16px;color:var(--ink);font-family:'DM Sans',sans-serif;font-size:14px;
+  outline:none;transition:all .15s;box-shadow:var(--shadow);
+}
+input::placeholder,textarea::placeholder{color:var(--ink5)}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-mid)}
+select option{background:var(--white);color:var(--ink)}
+textarea{resize:vertical;min-height:84px;line-height:1.7}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* ── BUTTONS ── */
+.btn-p{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:100%;padding:15px;background:var(--acc);border:none;border-radius:10px;
+  color:#fff;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .2s;margin-top:8px;letter-spacing:-.3px;
+  box-shadow:4px 4px 0 var(--ink);
+}
+.btn-p:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+.btn-p:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.btn-p:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-s{
+  display:inline-flex;align-items:center;gap:8px;padding:10px 20px;
+  background:var(--white);border:2px solid var(--border);border-radius:9px;
+  color:var(--ink3);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  cursor:pointer;transition:all .15s;
+}
+.btn-s:hover{border-color:var(--border2);color:var(--ink);background:var(--bg2)}
+.btn-row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+
+/* ── LOADER ── */
+.loader{
+  display:none;background:var(--white);border:2px solid var(--border);
+  border-radius:14px;padding:28px;margin-bottom:24px;
+  box-shadow:var(--shadow);
+}
+.loader-title{
+  font-family:'DM Mono',monospace;font-size:9px;color:var(--ink4);
+  letter-spacing:3px;text-transform:uppercase;margin-bottom:20px;
+}
+.li{display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid var(--border);font-size:14px;color:var(--ink5);transition:color .3s}
+.li:last-child{border:none}
+.li.done{color:var(--ink3)}.li.active{color:var(--ink)}
+.li-icon{
+  width:28px;height:28px;border-radius:8px;
+  background:var(--bg2);border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;flex-shrink:0;transition:all .3s;font-family:'DM Mono',monospace;color:var(--ink4);
+}
+.li.done .li-icon{background:var(--teal-light);border-color:var(--teal);color:var(--teal)}
+.li.active .li-icon{background:var(--yellow);border-color:var(--ink);color:var(--ink);animation:bounce .6s ease infinite alternate}
+@keyframes bounce{from{transform:scale(1)}to{transform:scale(1.1)}}
+.prog-wrap{flex:1}
+.prog-bar-bg{height:4px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden}
+.prog-bar-fill{height:100%;width:0%;border-radius:2px;transition:width .4s;background:linear-gradient(90deg,var(--acc),var(--yellow))}
+.prog-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink4);margin-top:4px}
+
+/* ── IDEAS ── */
+.ideas-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.idea-card{
+  background:var(--white);border:2px solid var(--border);border-radius:12px;
+  padding:20px 22px;cursor:pointer;transition:all .18s;
+  position:relative;overflow:hidden;
+}
+.idea-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--grad);transform:scaleX(0);transition:transform .2s;transform-origin:left;
+}
+.idea-card:hover{border-color:var(--border2);transform:translateX(4px);box-shadow:var(--shadow)}
+.idea-card:hover::before,.idea-card.sel::before{transform:scaleX(1)}
+.idea-card.sel{border-color:var(--acc);background:var(--acc-light);transform:translateX(4px);box-shadow:-4px 4px 0 var(--acc)}
+.idea-n{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px}
+.idea-t{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;line-height:1.35;margin-bottom:6px;color:var(--ink)}
+.idea-a{font-size:13px;color:var(--ink3);line-height:1.6}
+.idea-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.itag{
+  font-family:'DM Mono',monospace;font-size:9px;padding:3px 10px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:4px;color:var(--ink3);
+}
+.itag.pot{background:var(--yellow-light);border-color:#e8cc00;color:#7a6a00}
+
+/* ── SCRIPT ── */
+.scard{background:var(--white);border:2px solid var(--border);border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:var(--shadow)}
+.scard-hdr{padding:13px 20px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.scard-lbl{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--ink2);letter-spacing:-.2px}
+.scard-body{padding:20px 22px;font-size:14px;line-height:1.85;color:var(--ink2)}
+.scard-body strong{color:var(--ink);font-weight:600}
+
+/* ── STORYBOARD ── */
+.storyboard{display:flex;flex-direction:column;gap:0;margin-bottom:16px}
+.sb-card{background:var(--white);border:2px solid var(--border);border-top:none;overflow:hidden}
+.sb-card:first-child{border-top:2px solid var(--border);border-radius:12px 12px 0 0}
+.sb-card:last-child{border-radius:0 0 12px 12px}
+.sb-hdr{
+  display:flex;align-items:center;gap:12px;padding:14px 20px;
+  cursor:pointer;transition:background .15s;user-select:none;
+}
+.sb-hdr:hover{background:var(--bg2)}
+.sb-card.open .sb-hdr{background:var(--bg2);border-bottom:1px solid var(--border)}
+.sb-n{
+  width:30px;height:30px;border-radius:8px;
+  background:var(--acc);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:500;flex-shrink:0;
+}
+.sb-name{flex:1;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--ink)}
+.sb-type{
+  font-family:'DM Mono',monospace;font-size:8px;padding:3px 9px;
+  background:var(--yellow-light);border:1px solid #e8cc00;border-radius:3px;
+  color:#7a6a00;text-transform:uppercase;
+}
+.sb-dur{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink4);flex-shrink:0}
+.sb-chev{color:var(--ink4);font-size:10px;transition:transform .2s;flex-shrink:0}
+.sb-card.open .sb-chev{transform:rotate(180deg)}
+.sb-body{display:none}
+.sb-card.open .sb-body{display:block}
+.sb-sec{padding:16px 20px;border-bottom:1px solid var(--border)}
+.sb-sec:last-child{border:none}
+.sec-lbl{display:flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:9px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.d-n{background:var(--blue)}.d-i{background:var(--acc)}.d-d{background:var(--teal)}
+.narr{font-size:14px;line-height:1.85;color:var(--ink2);white-space:pre-wrap}
+.img-box{
+  background:var(--ink);border-radius:8px;
+  padding:14px 16px;font-family:'DM Mono',monospace;font-size:11px;
+  color:#f5d060;line-height:1.7;position:relative;
+}
+.cp{
+  position:absolute;top:10px;right:10px;
+  font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1px;
+  padding:4px 10px;border:1px solid rgba(255,255,255,.15);border-radius:4px;
+  background:rgba(255,255,255,.07);color:rgba(255,255,255,.4);cursor:pointer;transition:all .15s;
+}
+.cp:hover{border-color:var(--yellow);color:var(--yellow)}
+.cp.ok{border-color:var(--teal);color:var(--teal)}
+.dir{font-size:13px;color:var(--ink3);font-style:italic;line-height:1.7}
+
+/* ── EXPORT ── */
+.exp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.exp-card{
+  background:var(--white);border:2px solid var(--border);border-radius:11px;
+  padding:18px;cursor:pointer;transition:all .15s;
+}
+.exp-card:hover{border-color:var(--acc);transform:translateY(-2px);box-shadow:0 4px 16px rgba(255,72,32,.1)}
+.exp-ico{font-size:26px;margin-bottom:9px}
+.exp-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;color:var(--ink)}
+.exp-desc{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink4)}
+
+/* Output boxes */
+.out-box{background:var(--white);border:2px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)}
+.out-box-hdr{
+  padding:13px 20px;background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.out-box-lbl{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;color:var(--ink2)}
+.out-box-hdr .cp{position:static;margin:0}
+.out-box-body{padding:20px 22px;font-size:14px;line-height:1.85;color:var(--ink2);white-space:pre-wrap}
+.out-box-body strong{color:var(--ink);font-weight:600}
+.tag-cloud{display:flex;gap:7px;flex-wrap:wrap;padding:0 20px 16px}
+.ytag{
+  font-family:'DM Mono',monospace;font-size:10px;padding:4px 12px;
+  background:var(--yellow-light);border:1px solid #e8cc00;border-radius:4px;color:#7a6a00;
+}
+
+/* Tools */
+.tools-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:14px 0}
+.tool-a{
+  background:var(--white);border:2px solid var(--border);border-radius:9px;
+  padding:13px;text-decoration:none;display:block;transition:all .15s;
+}
+.tool-a:hover{border-color:var(--acc);box-shadow:3px 3px 0 var(--acc)}
+.tool-n{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.tool-d{font-family:'DM Mono',monospace;font-size:8px;color:var(--ink4)}
+.tbadge{display:inline-block;font-family:'DM Mono',monospace;font-size:8px;padding:2px 7px;border-radius:3px;margin-top:5px;letter-spacing:.5px}
+.free{background:var(--teal-light);color:var(--teal);border:1px solid #b0ede7}
+.frm{background:var(--yellow-light);color:#8a7000;border:1px solid #e8d800}
+
+.narr-box{
+  background:var(--bg2);border:1px solid var(--border);border-radius:9px;
+  padding:18px;font-size:13.5px;line-height:1.9;color:var(--ink2);
+  white-space:pre-wrap;max-height:240px;overflow-y:auto;margin-bottom:12px;
+}
+
+/* Guide */
+.guide{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.guide-item{
+  display:flex;align-items:flex-start;gap:14px;
+  background:var(--white);border:2px solid var(--border);border-radius:10px;padding:16px 18px;
+}
+.guide-n{
+  width:28px;height:28px;border-radius:8px;
+  background:var(--ink);display:flex;align-items:center;justify-content:center;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--yellow);font-weight:500;flex-shrink:0;
+}
+.guide-c h4{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:4px;color:var(--ink)}
+.guide-c p{font-size:12px;color:var(--ink3);line-height:1.65}
+.guide-c a{color:var(--acc);text-decoration:none;font-weight:500}
+.guide-c a:hover{text-decoration:underline}
+
+/* Section accent headers */
+.sec-header{
+  display:flex;align-items:center;gap:10px;
+  font-family:'DM Mono',monospace;font-size:9px;color:var(--ink4);
+  letter-spacing:3px;text-transform:uppercase;margin:20px 0 10px;
+}
+.sec-header::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--ink4)}
+
+/* Sidebar scrollbar */
+.sidebar::-webkit-scrollbar-track{background:transparent}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1)}
+
+@media(max-width:700px){
+  .app{grid-template-columns:1fr}
+  .sidebar{height:auto;position:relative}
+  .workspace{padding:20px}
+  .topbar{padding:14px 20px}
+  .row2,.exp-grid,.tools-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-top">
+      <div class="brand-icon">🎬</div>
+      <div>
+        <div class="brand-name">YT Studio</div>
+      </div>
+    </div>
+    <div class="brand-ver">V3 · Agente de producción</div>
+  </div>
+
+  <div>
+    <div class="nav-label">Producción</div>
+    <button class="nav-item active" id="nav1" onclick="navTo(1)">
+      <span class="nav-num" id="nn1">1</span> Canal
+    </button>
+    <button class="nav-item" id="nav2" onclick="navTo(2)">
+      <span class="nav-num" id="nn2">2</span> Ideas
+    </button>
+    <button class="nav-item" id="nav3" onclick="navTo(3)">
+      <span class="nav-num" id="nn3">3</span> Guión
+    </button>
+    <button class="nav-item" id="nav4" onclick="navTo(4)">
+      <span class="nav-num" id="nn4">4</span> Pipeline
+    </button>
+    <button class="nav-item" id="nav5" onclick="navTo(5)">
+      <span class="nav-num" id="nn5">5</span> Exportar
+    </button>
+    <button class="nav-item" id="nav6" onclick="navTo(6)">
+      <span class="nav-num" id="nn6">6</span> Calendario
+    </button>
+  </div>
+
+  <div class="hist-section">
+    <div class="nav-label" style="margin-bottom:10px">Historial</div>
+    <div class="hist-list" id="histList">
+      <div class="hist-empty" id="histEmpty">Sin vídeos generados</div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══════ MAIN ═══════ -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h2 id="tbTitle">Canal</h2>
+      <p id="tbSub">Configura el contexto base</p>
+    </div>
+    <div class="status-pill"><span class="pulse"></span>Claude · Activo</div>
+  </div>
+
+  <div class="workspace">
+
+<!-- ════ PANEL 1: CANAL ════ -->
+<div class="panel active" id="panel1">
+  <div class="panel-head">
+    <h2>Tu <span>canal</span></h2>
+    <p>Contexto base · Se inyecta en todo</p>
+  </div>
+  <div class="fg" id="apiKeyWrap">
+    <label style="display:flex;align-items:center;justify-content:space-between">
+      <span>API Key Anthropic <span style="color:var(--acc)">*</span></span>
+      <a href="https://console.anthropic.com/settings/keys" target="_blank" style="font-family:'DM Mono',monospace;font-size:9px;color:var(--acc);text-decoration:none;letter-spacing:1px">OBTENER KEY →</a>
+    </label>
+    <div style="position:relative">
+      <input id="cApiKey" type="password" placeholder="sk-ant-api03-..." style="padding-right:90px"/>
+      <button onclick="toggleKey()" id="keyToggle" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:var(--bg2);border:1px solid var(--border);border-radius:5px;padding:4px 10px;font-family:'DM Mono',monospace;font-size:9px;cursor:pointer;color:var(--ink3)">MOSTRAR</button>
+    </div>
+    <div id="keyStatus" style="font-family:'DM Mono',monospace;font-size:9px;margin-top:5px;color:var(--ink4)">Sin key · Usando proxy de Claude.ai (rate limit)</div>
+  </div>
+  <div class="row2">
+    <div class="fg"><label>Nombre del canal</label><input id="cNombre" placeholder="Ej: IA con Rubén"/></div>
+    <div class="fg"><label>Nicho principal *</label><input id="cNicho" placeholder="Ej: IA para emprendedores en España"/></div>
+  </div>
+  <div class="fg"><label>Audiencia objetivo *</label><input id="cAud" placeholder="Ej: emprendedores españoles que quieren automatizar con IA"/></div>
+  <div class="row2">
+    <div class="fg"><label>Tono</label>
+      <select id="cTono">
+        <option value="cercano y divulgativo">Cercano y divulgativo</option>
+        <option value="profesional y directo">Profesional y directo</option>
+        <option value="técnico y analítico">Técnico y analítico</option>
+        <option value="enérgico y motivador">Enérgico y motivador</option>
+      </select>
+    </div>
+    <div class="fg"><label>Suscriptores</label>
+      <select id="cSubs">
+        <option value="canal nuevo (0-100 subs)">Canal nuevo (0-100)</option>
+        <option value="canal en crecimiento (100-1k)">En crecimiento (100-1k)</option>
+        <option value="canal establecido (1k-10k)">Establecido (1k-10k)</option>
+        <option value="canal grande (+10k)">Grande (+10k)</option>
+      </select>
+    </div>
+  </div>
+  <div class="row2">
+    <div class="fg"><label>Duración vídeos</label>
+      <select id="cDur">
+        <option value="5">5 minutos</option>
+        <option value="8" selected>8 minutos</option>
+        <option value="12">12 minutos</option>
+        <option value="15">15 minutos</option>
+      </select>
+    </div>
+    <div class="fg"><label>Estilo visual</label>
+      <select id="cEstilo">
+        <option value="flat design illustration" selected>Flat design illustration</option>
+        <option value="cinematic photorealistic">Fotorrealista cinemático</option>
+        <option value="3D render stylized">3D estilizado</option>
+        <option value="dark futuristic tech">Tech futurista oscuro</option>
+        <option value="minimalist vector art">Vector minimalista</option>
+        <option value="isometric digital art">Arte isométrico</option>
+      </select>
+    </div>
+  </div>
+  <button class="btn-p" onclick="phase1Next()">Generar ideas →</button>
+</div>
+
+<!-- ════ PANEL 2: IDEAS ════ -->
+<div class="panel" id="panel2">
+  <div class="panel-head">
+    <h2>Elige una <span>idea</span></h2>
+    <p id="p2sub">5 ideas de alto potencial</p>
+  </div>
+  <div class="loader" id="load2">
+    <div class="loader-title">Analizando nicho y mercado</div>
+    <div class="li active" id="l2a"><div class="li-icon">1</div><span>Analizando tendencias del nicho</span></div>
+    <div class="li" id="l2b"><div class="li-icon">2</div><span>Generando ideas de alto potencial</span></div>
+  </div>
+  <div class="ideas-grid" id="ideasGrid"></div>
+  <div id="ideas-acts" style="display:none">
+    <button class="btn-p" id="btnIdea" onclick="phase2Next()" disabled>Generar guión →</button>
+    <div class="btn-row">
+      <button class="btn-s" onclick="genIdeas()">↺ Regenerar</button>
+      <button class="btn-s" onclick="navTo(1)">← Volver</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PANEL 3: GUIÓN ════ -->
+<div class="panel" id="panel3">
+  <div class="panel-head">
+    <h2>El <span>guión</span></h2>
+    <p id="p3sub">Estructura narrativa completa</p>
+  </div>
+  <div class="loader" id="load3">
+    <div class="loader-title">Generando guión</div>
+    <div class="li active" id="l3a"><div class="li-icon">1</div><span>Titulares CTR + hook de apertura</span></div>
+    <div class="li" id="l3b"><div class="li-icon">2</div><span>Bloques de contenido y CTAs</span></div>
+  </div>
+  <div id="scriptOut" style="display:none"></div>
+  <div id="script-acts" style="display:none">
+    <button class="btn-p" onclick="phase3Next()">Generar pipeline →</button>
+    <div class="btn-row">
+      <button class="btn-s" onclick="genScript()">↺ Regenerar</button>
+      <button class="btn-s" onclick="navTo(2)">← Cambiar idea</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PANEL 4: PIPELINE ════ -->
+<div class="panel" id="panel4">
+  <div class="panel-head">
+    <h2>Pipeline de <span>producción</span></h2>
+    <p id="p4sub">Narración + imagen + dirección por escena</p>
+  </div>
+  <div class="loader" id="load4">
+    <div class="loader-title" id="load4title">Generando pipeline</div>
+    <div class="li active" id="l4a"><div class="li-icon">1</div><span>Estructurando escenas del vídeo</span></div>
+    <div class="li" id="l4b">
+      <div class="li-icon">2</div>
+      <div class="prog-wrap">
+        <span>Narración + imagen por escena</span>
+        <div class="prog-bar-bg"><div class="prog-bar-fill" id="pBar"></div></div>
+        <div class="prog-label" id="pLabel">0 / 0 escenas</div>
+      </div>
+    </div>
+    <div class="li" id="l4c"><div class="li-icon">3</div><span>Compilando pipeline completo</span></div>
+  </div>
+  <div id="pipeOut" style="display:none">
+    <div class="storyboard" id="sbList"></div>
+  </div>
+  <div id="pipe-acts" style="display:none">
+    <button class="btn-p" onclick="phase4Next()">Exportar y extras →</button>
+    <div class="btn-row">
+      <button class="btn-s" onclick="genPipeline()">↺ Regenerar</button>
+      <button class="btn-s" onclick="navTo(3)">← Volver al guión</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PANEL 5: EXPORTAR ════ -->
+<div class="panel" id="panel5">
+  <div class="panel-head">
+    <h2>Exportar y <span>producir</span></h2>
+    <p id="p5sub">SEO · Miniatura · Shorts · Guía</p>
+  </div>
+  <div class="loader" id="load5">
+    <div class="loader-title">Generando extras</div>
+    <div class="li active" id="l5a"><div class="li-icon">1</div><span>Descripción + tags SEO YouTube</span></div>
+    <div class="li" id="l5b"><div class="li-icon">2</div><span>Concepto de miniatura</span></div>
+    <div class="li" id="l5c"><div class="li-icon">3</div><span>Guión Short automático</span></div>
+    <div class="li" id="l5d"><div class="li-icon">4</div><span>Prompts musicales Suno</span></div>
+  </div>
+
+  <div id="extrasOut" style="display:none">
+
+    <div class="sec-header">Descargar pipeline</div>
+    <div class="exp-grid">
+      <div class="exp-card" onclick="expTXT()"><div class="exp-ico">📄</div><div class="exp-name">Pipeline TXT</div><div class="exp-desc">Guión + narración + prompts</div></div>
+      <div class="exp-card" onclick="expJSON()"><div class="exp-ico">⚙️</div><div class="exp-name">Pipeline JSON</div><div class="exp-desc">Estructura completa</div></div>
+      <div class="exp-card" onclick="expNarr()"><div class="exp-ico">🎙️</div><div class="exp-name">Solo narración</div><div class="exp-desc">Lista para TTS</div></div>
+      <div class="exp-card" onclick="expPrompts()"><div class="exp-ico">🖼️</div><div class="exp-name">Solo prompts</div><div class="exp-desc">Para Ideogram/Pikaso</div></div>
+    </div>
+
+    <!-- Narración completa -->
+    <div class="out-box">
+      <div class="out-box-hdr">
+        <span class="out-box-lbl">🎙 Narración completa</span>
+        <button class="cp" onclick="copyNarr(this)">COPIAR TODO</button>
+      </div>
+      <div style="padding:20px 22px">
+        <div class="narr-box" id="narrFull"></div>
+      </div>
+    </div>
+
+    <!-- SEO -->
+    <div class="out-box" id="seoBox">
+      <div class="out-box-hdr">
+        <span class="out-box-lbl">🔍 Descripción SEO YouTube</span>
+        <button class="cp" onclick="copyBox('seoContent',this)">COPIAR</button>
+      </div>
+      <div class="out-box-body" id="seoContent"></div>
+      <div class="tag-cloud" id="tagCloud"></div>
+    </div>
+
+    <!-- Miniatura -->
+    <div class="out-box" id="thumbBox">
+      <div class="out-box-hdr"><span class="out-box-lbl">🖼 Concepto de miniatura</span></div>
+      <div class="out-box-body" id="thumbContent"></div>
+    </div>
+
+    <!-- Shorts -->
+    <div class="out-box" id="shortsBox">
+      <div class="out-box-hdr">
+        <span class="out-box-lbl">📱 Short automático · 60 seg</span>
+        <button class="cp" onclick="copyBox('shortsContent',this)">COPIAR</button>
+      </div>
+      <div class="out-box-body" id="shortsContent"></div>
+    </div>
+
+    <!-- Música -->
+    <div class="out-box" id="musicBox" style="display:none">
+      <div class="out-box-hdr">
+        <span class="out-box-lbl">🎵 Prompts musicales · Suno.ai</span>
+        <a href="https://suno.com" target="_blank" style="font-family:'DM Mono',monospace;font-size:9px;padding:4px 10px;background:var(--ink);color:var(--yellow);border-radius:4px;text-decoration:none;letter-spacing:1px">ABRIR SUNO →</a>
+      </div>
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:#ff4820;display:inline-block"></span>Jingle / Intro · 15-30 seg
+          </div>
+          <div style="position:relative">
+            <div id="jingleContent" class="out-box-body" style="padding:14px 16px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:11px;color:var(--ink2);white-space:pre-wrap;padding-right:80px"></div>
+            <button class="cp" style="position:absolute;top:10px;right:10px" onclick="copyBox('jingleContent',this)">COPIAR</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--teal);display:inline-block"></span>Música de fondo · Instrumental
+          </div>
+          <div style="position:relative">
+            <div id="bgMusicContent" class="out-box-body" style="padding:14px 16px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);font-family:'DM Mono',monospace;font-size:11px;color:var(--ink2);white-space:pre-wrap;padding-right:80px"></div>
+            <button class="cp" style="position:absolute;top:10px;right:10px" onclick="copyBox('bgMusicContent',this)">COPIAR</button>
+          </div>
+        </div>
+        <p style="font-family:'DM Mono',monospace;font-size:10px;color:var(--ink4);margin:0">
+          Copia el prompt → pégalo en Suno.ai → genera · El jingle lo usas en intro/outro, la música de fondo en todo el vídeo (volumen 15-20%)
+        </p>
+      </div>
+    </div>
+
+    <!-- Herramientas -->
+    <div class="sec-header">Herramientas gratuitas</div>
+    <div class="tools-grid">
+      <a class="tool-a" href="https://suno.com" target="_blank"><div class="tool-n">Suno</div><div class="tool-d">Genera música con IA</div><span class="tbadge free">GRATIS</span></a>
+      <a class="tool-a" href="https://freetts.com" target="_blank"><div class="tool-n">FreeTTS</div><div class="tool-d">Microsoft Edge TTS</div><span class="tbadge free">GRATIS</span></a>
+      <a class="tool-a" href="https://tts.monster" target="_blank"><div class="tool-n">TTS Monster</div><div class="tool-d">Voces en español</div><span class="tbadge free">GRATIS</span></a>
+      <a class="tool-a" href="https://ideogram.ai" target="_blank"><div class="tool-n">Ideogram</div><div class="tool-d">Imágenes por prompt</div><span class="tbadge free">GRATIS</span></a>
+      <a class="tool-a" href="https://www.freepik.com/pikaso" target="_blank"><div class="tool-n">Pikaso</div><div class="tool-d">Freepik AI imagen</div><span class="tbadge frm">FREEMIUM</span></a>
+      <a class="tool-a" href="https://app.clipchamp.com" target="_blank"><div class="tool-n">Clipchamp</div><div class="tool-d">Editor online</div><span class="tbadge free">GRATIS</span></a>
+      <a class="tool-a" href="https://www.capcut.com" target="_blank"><div class="tool-n">CapCut</div><div class="tool-d">Subtítulos auto</div><span class="tbadge free">GRATIS</span></a>
+    </div>
+
+    <!-- Guía producción -->
+    <div class="sec-header">Guía de producción · 10 min</div>
+    <div class="guide">
+      <div class="guide-item"><div class="guide-n">1</div><div class="guide-c"><h4>Audio · 2 min</h4><p>Ve a <a href="https://freetts.com" target="_blank">FreeTTS.com</a> · Selecciona voz española (Microsoft Álvaro o Elena) · Pega narración escena a escena · Descarga MP3</p></div></div>
+      <div class="guide-item"><div class="guide-n">2</div><div class="guide-c"><h4>Imágenes · 3 min</h4><p>Ve a <a href="https://ideogram.ai" target="_blank">Ideogram.ai</a> · Pega el prompt de cada escena · Descarga la imagen · Repite por escena</p></div></div>
+      <div class="guide-item"><div class="guide-n">3</div><div class="guide-c"><h4>Montaje · 4 min</h4><p><a href="https://app.clipchamp.com" target="_blank">Clipchamp</a> o CapCut · Importa imágenes + audios · Alinea por escena · Subtítulos automáticos · Música YouTube Audio Library</p></div></div>
+      <div class="guide-item"><div class="guide-n">4</div><div class="guide-c"><h4>Publica · 1 min</h4><p>Exporta 1080p · Sube a YouTube · Pega título y descripción SEO · Crea miniatura en Canva con el concepto generado</p></div></div>
+    </div>
+
+    <div class="btn-row" style="margin-top:28px">
+      <button class="btn-p" onclick="goCalendar()" style="flex:1;background:var(--ink);box-shadow:4px 4px 0 var(--acc)">📅 Generar calendario 30 días →</button>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn-p" onclick="newVideo()" style="flex:1">✦ Crear nuevo vídeo</button>
+      <button class="btn-s" onclick="navTo(4)">← Pipeline</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PANEL 6: CALENDARIO ════ -->
+<div class="panel" id="panel6">
+  <div class="panel-head">
+    <h2>Calendario <span>editorial</span></h2>
+    <p id="p6sub">Plan de contenido 30 días basado en tu canal</p>
+  </div>
+  <div class="loader" id="load6">
+    <div class="loader-title">Generando calendario</div>
+    <div class="li active" id="l6a"><div class="li-icon">1</div><span>Analizando nicho y frecuencia óptima</span></div>
+    <div class="li" id="l6b"><div class="li-icon">2</div><span>Generando 30 días de contenido</span></div>
+  </div>
+  <div id="calOut" style="display:none">
+    <div id="calStats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px"></div>
+    <div id="calGrid" style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px"></div>
+    <div class="btn-row">
+      <button class="btn-p" onclick="expCalendar()" style="flex:1">📋 Copiar calendario completo</button>
+      <button class="btn-s" onclick="genCalendar()">↺ Regenerar</button>
+      <button class="btn-s" onclick="navTo(5)">← Exportar</button>
+    </div>
+  </div>
+</div>
+
+  </div><!-- /workspace -->
+</main>
+</div><!-- /app -->
+
+<script>
+// Detecta si estamos en produccion o en artifact de Claude
+const IS_ARTIFACT = window.location.protocol === 'blob:' || window.location.hostname === '';
+const API = IS_ARTIFACT
+  ? "https://api.anthropic.com/v1/messages"
+  : "/api/proxy";
+const HIST_KEY="ytstudio_v3_history";
+const KEY_KEY="ytstudio_v3_apikey";
+const S={phase:1,canal:{},ideas:[],idea:null,script:null,pipeline:null,extras:null};
+
+function getKey(){return localStorage.getItem(KEY_KEY)||'';}
+function saveKey(k){if(k)localStorage.setItem(KEY_KEY,k);else localStorage.removeItem(KEY_KEY);}
+function toggleKey(){
+  var inp=document.getElementById('cApiKey');
+  var btn=document.getElementById('keyToggle');
+  if(inp.type==='password'){inp.type='text';btn.textContent='OCULTAR';}
+  else{inp.type='password';btn.textContent='MOSTRAR';}
+}
+function initKey(){
+  try{
+    var k=getKey();
+    if(k){
+      var inp=document.getElementById('cApiKey');
+      var sta=document.getElementById('keyStatus');
+      if(inp)inp.value=k;
+      if(sta){sta.textContent='Key guardada · Sin rate limit';sta.style.color='var(--teal)';}
+    }
+  }catch(e){}
+}
+// initKey se llama al final del script cuando el DOM ya está cargado
+
+// ─── 1 LLAMADA, 1000 tokens max ───
+async function ai(prompt){
+  var key=getKey();
+  var headers={'Content-Type':'application/json'};
+  if(key){headers['x-api-key']=key;headers['anthropic-version']='2023-06-01';headers['anthropic-dangerous-direct-browser-access']='true';}
+  const r=await fetch(API,{method:'POST',headers:headers,
+    body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:4000,
+      messages:[{role:'user',content:prompt}]})});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error('API '+r.status+': '+JSON.stringify(e));}
+  const d=await r.json();
+  var txt=d.content?.[0]?.text||''; var m=txt.match(/\{[\s\S]*\}/); return m?m[0]:txt.trim();
+}
+function parseJSON(raw,fb){
+  try{return JSON.parse(raw);}
+  catch{const m=raw.match(/[\[{][\s\S]*[\]}]/);try{return m?JSON.parse(m[0]):(fb||{})}catch{return fb||{}}}
+}
+function errBox(msg){
+  return '<div style="background:#fff0ec;border:2px solid #ff4820;border-radius:10px;padding:16px 20px;margin-bottom:12px">'
+    +'<strong style="color:#ff4820">Error</strong><br>'
+    +'<code style="font-size:11px;color:#6b5e4a;word-break:break-all">'+msg+'</code></div>';
+}
+function ctx(){
+  var c=S.canal;
+  return 'CANAL:'+c.nombre+' NICHO:'+c.nicho+' AUDIENCIA:'+c.aud+' TONO:'+c.tono+' ESTILO:'+c.estilo;
+}
+
+const META={
+  1:{title:'Canal',sub:'Configura el contexto base'},
+  2:{title:'Ideas',sub:'5 ideas de alto potencial'},
+  3:{title:'Guión',sub:'Estructura narrativa completa'},
+  4:{title:'Pipeline',sub:'Narración + imagen por escena'},
+  5:{title:'Exportar',sub:'SEO · Miniatura · Shorts · Guía'},
+  6:{title:'Calendario',sub:'Plan editorial 30 días'}
+};
+function navTo(n){if(n>S.phase&&n>1)return;setPhase(n);}
+function setPhase(n){
+  S.phase=n;
+  for(var i=1;i<=6;i++){
+    var nav=document.getElementById('nav'+i);
+    var nn=document.getElementById('nn'+i);
+    var panel=document.getElementById('panel'+i);
+    nav.classList.remove('active','done');panel.classList.remove('active');
+    if(i<n){nav.classList.add('done');nn.textContent='✓';}
+    else if(i===n){nav.classList.add('active');panel.classList.add('active');nn.textContent=i;}
+    else{nn.textContent=i;}
+  }
+  document.getElementById('tbTitle').textContent=META[n].title;
+  document.getElementById('tbSub').textContent=META[n].sub;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function showLoader(id){document.getElementById(id).style.display='block';}
+function hideLoader(id){document.getElementById(id).style.display='none';}
+function liSet(id,state){
+  var el=document.getElementById(id);
+  el.classList.remove('active','done');
+  if(state==='active')el.classList.add('active');
+  if(state==='done'){el.classList.add('done');el.querySelector('.li-icon').textContent='✓';}
+}
+
+// ─── FASE 1 ───
+function phase1Next(){
+  var nicho=document.getElementById('cNicho').value.trim();
+  if(!nicho){
+    document.getElementById('cNicho').style.borderColor='#ff4820';
+    setTimeout(function(){document.getElementById('cNicho').style.borderColor='';},1500);
+    return;
+  }
+  // Guardar API key en localStorage
+  var k=document.getElementById('cApiKey').value.trim();
+  saveKey(k);
+  if(k){
+    document.getElementById('keyStatus').textContent='Key guardada · Sin rate limit';
+    document.getElementById('keyStatus').style.color='var(--teal)';
+  }
+  S.canal={
+    nombre:document.getElementById('cNombre').value.trim()||'Mi canal',
+    nicho:nicho,
+    aud:document.getElementById('cAud').value.trim()||'audiencia hispanohablante',
+    tono:document.getElementById('cTono').value,
+    subs:document.getElementById('cSubs').value,
+    dur:document.getElementById('cDur').value,
+    estilo:document.getElementById('cEstilo').value
+  };
+  S.phase=2;setPhase(2);genIdeas();
+}
+
+// ─── FASE 2: IDEAS — 1 LLAMADA ───
+async function genIdeas(){
+  showLoader('load2');liSet('l2a','active');liSet('l2b','');
+  document.getElementById('ideasGrid').innerHTML='';
+  document.getElementById('ideas-acts').style.display='none';
+  document.getElementById('btnIdea').disabled=true;
+
+  setTimeout(function(){liSet('l2a','done');liSet('l2b','active');},600);
+
+  var prompt='Estratega YouTube. '+ctx()+'\n'
+    +'5 ideas vídeo alto potencial nicho indicado. SOLO JSON minificado sin espacios:\n'
+    +'{"ideas":[{"t":"titulo","a":"angulo 1 frase","f":"formato","k":"keyword"}]}';
+  try{
+    var raw=await ai(prompt);
+    var data=parseJSON(raw,{ideas:[]});
+    S.ideas=(data.ideas||[]).map(function(x){
+      return {titulo:x.t||x.titulo||'Sin título',angulo:x.a||x.angulo||'',formato:x.f||x.formato||'vídeo',kw:x.k||x.kw||''};
+    });
+    liSet('l2b','done');
+    setTimeout(function(){hideLoader('load2');renderIdeas();},300);
+  }catch(e){
+    hideLoader('load2');
+    document.getElementById('ideasGrid').innerHTML=errBox(e.message);
+    document.getElementById('ideas-acts').style.display='block';
+  }
+}
+
+function renderIdeas(){
+  document.getElementById('ideasGrid').innerHTML=S.ideas.map(function(idea,i){
+    return '<div class="idea-card" onclick="selIdea('+i+',this)">'
+      +'<div class="idea-n">IDEA '+(i+1)+'</div>'
+      +'<div class="idea-t">'+idea.titulo+'</div>'
+      +'<div class="idea-a">'+idea.angulo+'</div>'
+      +'<div class="idea-tags"><span class="itag">'+idea.formato+'</span>'
+      +'<span class="itag pot">'+idea.kw+'</span></div></div>';
+  }).join('');
+  document.getElementById('ideas-acts').style.display='block';
+  document.getElementById('p2sub').textContent='Selecciona una idea';
+}
+function selIdea(i,el){
+  document.querySelectorAll('.idea-card').forEach(function(c){c.classList.remove('sel');});
+  el.classList.add('sel');S.idea=S.ideas[i];
+  document.getElementById('btnIdea').disabled=false;
+}
+function phase2Next(){if(S.idea){S.phase=3;setPhase(3);genScript();}}
+
+// ─── FASE 3: GUIÓN — 1 LLAMADA ───
+async function genScript(){
+  showLoader('load3');liSet('l3a','active');liSet('l3b','');
+  document.getElementById('scriptOut').style.display='none';
+  document.getElementById('script-acts').style.display='none';
+
+  setTimeout(function(){liSet('l3a','done');liSet('l3b','active');},800);
+
+  var prompt='Guionista YouTube. '+ctx()+'\n'
+    +'Vídeo:"'+S.idea.titulo+'" | '+S.canal.dur+' min\n'
+    +'SOLO JSON minificado:\n'
+    +'{"hook":"frase apertura impactante 10 palabras max","intro":"qué aprenderá 2 frases",'
+    +'"bloques":[{"t":"titulo","c":"contenido 2 frases","m":2}],'
+    +'"cta":"texto CTA intermedio","cierre":"resumen + CTA final",'
+    +'"titulos":[{"v":"titulo CTR A"},{"v":"titulo CTR B"},{"v":"titulo CTR C"}]}';
+  try{
+    var raw=await ai(prompt);
+    S.script=parseJSON(raw,{});
+    liSet('l3b','done');
+    setTimeout(function(){hideLoader('load3');renderScript();},300);
+  }catch(e){
+    hideLoader('load3');
+    document.getElementById('scriptOut').innerHTML=errBox(e.message);
+    document.getElementById('scriptOut').style.display='block';
+    document.getElementById('script-acts').style.display='block';
+  }
+}
+
+function renderScript(){
+  var g=S.script;var html='';
+  if(g.titulos&&g.titulos.length){
+    html+='<div class="scard"><div class="scard-hdr"><span class="scard-lbl">🎯 Títulos CTR</span></div><div class="scard-body">';
+    g.titulos.forEach(function(t,i){
+      var v=t.v||t.titulo||t;
+      html+='<p style="margin-bottom:12px"><strong>'+(i===0?'🥇 ':'')+'"'+v+'"</strong></p>';
+    });
+    html+='</div></div>';
+  }
+  if(g.hook)html+='<div class="scard"><div class="scard-hdr"><span class="scard-lbl">⚡ Hook</span></div><div class="scard-body" style="font-style:italic">"'+g.hook+'"</div></div>';
+  if(g.intro)html+='<div class="scard"><div class="scard-hdr"><span class="scard-lbl">📍 Intro</span></div><div class="scard-body">'+g.intro+'</div></div>';
+  if(g.bloques&&g.bloques.length){
+    html+='<div class="scard"><div class="scard-hdr"><span class="scard-lbl">🎬 Bloques</span></div><div class="scard-body">';
+    g.bloques.forEach(function(b,i){
+      var titulo=b.t||b.titulo||'Bloque '+(i+1);
+      var cont=b.c||b.contenido||'';
+      var min=b.m||b.dur_min||2;
+      html+='<p style="margin-bottom:12px"><strong>'+titulo+'</strong> <span style="font-family:monospace;font-size:10px;color:var(--ink4)">['+min+' min]</span><br>'+cont+'</p>';
+    });
+    html+='</div></div>';
+  }
+  if(g.cta)html+='<div class="scard"><div class="scard-hdr"><span class="scard-lbl">💬 CTA</span></div><div class="scard-body" style="color:var(--teal)">'+g.cta+'</div></div>';
+  if(g.cierre)html+='<div class="scard"><div class="scard-hdr"><span class="scard-lbl">🏁 Cierre</span></div><div class="scard-body">'+g.cierre+'</div></div>';
+  var out=document.getElementById('scriptOut');
+  out.innerHTML=html;out.style.display='block';
+  document.getElementById('script-acts').style.display='block';
+}
+function phase3Next(){S.phase=4;setPhase(4);genPipeline();}
+
+// ─── FASE 4: PIPELINE — 1 LLAMADA (todas las escenas juntas) ───
+async function genPipeline(){
+  showLoader('load4');liSet('l4a','active');liSet('l4b','');liSet('l4c','');
+  document.getElementById('pipeOut').style.display='none';
+  document.getElementById('pipe-acts').style.display='none';
+
+  var dur=parseInt(S.canal.dur);
+  var nE=dur<=5?4:dur<=8?5:dur<=12?6:7;
+
+  document.getElementById('pLabel').textContent='Generando '+nE+' escenas...';
+  setTimeout(function(){liSet('l4a','done');liSet('l4b','active');},600);
+
+  // 1 sola llamada: estructura + narración corta + prompt imagen + nota, todo junto
+  var prompt='Productor YouTube. '+ctx()+'\n'
+    +'Vídeo:"'+S.idea.titulo+'" | '+dur+' min | '+nE+' escenas\n'
+    +'IMPORTANTE: narracion max 40 palabras por escena, prompt_imagen max 25 palabras EN.\n'
+    +'SOLO JSON minificado, sin texto extra:\n'
+    +'{"escenas":[{"n":1,"nombre":"hook","tipo":"hook","seg":35,'
+    +'"narracion":"texto tts","img":"english prompt for image","dir":"nota direccion"}]}';
+  try{
+    var raw=await ai(prompt);
+    var data=parseJSON(raw,{escenas:[]});
+    var escenas=(data.escenas||[]).map(function(e){
+      return {
+        numero:e.n||e.numero||1,
+        nombre:e.nombre||'Escena',
+        tipo:e.tipo||'desarrollo',
+        dur_seg:e.seg||e.dur_seg||45,
+        narracion:e.narracion||e.narr||'',
+        prompt_imagen:e.img||e.prompt_imagen||'',
+        nota_director:e.dir||e.nota_director||''
+      };
+    });
+    liSet('l4b','done');liSet('l4c','active');
+    S.pipeline={titulo:S.idea.titulo,escenas:escenas};
+    saveHistory();
+    document.getElementById('pBar').style.width='100%';
+    document.getElementById('pLabel').textContent=escenas.length+' escenas generadas';
+    setTimeout(function(){liSet('l4c','done');hideLoader('load4');renderPipeline();},300);
+  }catch(e){
+    hideLoader('load4');
+    document.getElementById('pipeOut').innerHTML=errBox(e.message);
+    document.getElementById('pipeOut').style.display='block';
+    document.getElementById('pipe-acts').style.display='block';
+  }
+}
+
+function renderPipeline(){
+  var list=document.getElementById('sbList');
+  list.innerHTML=S.pipeline.escenas.map(function(e,i){
+    return '<div class="sb-card '+(i===0?'open':'')+'" id="sc'+i+'">'
+      +'<div class="sb-hdr" onclick="toggleSB(\'sc'+i+'\')">'
+      +'<div class="sb-n">'+e.numero+'</div>'
+      +'<div class="sb-name">'+escH(e.nombre)+'</div>'
+      +'<span class="sb-type">'+e.tipo+'</span>'
+      +'<span class="sb-dur">'+e.dur_seg+'s</span>'
+      +'<span class="sb-chev">▾</span></div>'
+      +'<div class="sb-body">'
+      +'<div class="sb-sec"><div class="sec-lbl"><span class="dot d-n"></span>Narración TTS</div>'
+      +'<div class="narr">'+escH(e.narracion)+'</div></div>'
+      +'<div class="sb-sec"><div class="sec-lbl"><span class="dot d-i"></span>Prompt imagen (EN)</div>'
+      +'<div class="img-box">'+escH(e.prompt_imagen)
+      +'<button class="cp" onclick="cpTxt(this,event,\''+eaH(e.prompt_imagen)+'\')">COPIAR</button></div></div>'
+      +'<div class="sb-sec"><div class="sec-lbl"><span class="dot d-d"></span>Dirección</div>'
+      +'<div class="dir">'+escH(e.nota_director)+'</div></div>'
+      +'</div></div>';
+  }).join('');
+  document.getElementById('pipeOut').style.display='block';
+  document.getElementById('pipe-acts').style.display='block';
+  document.getElementById('p4sub').textContent='Pipeline listo · '+S.pipeline.escenas.length+' escenas';
+}
+function toggleSB(id){document.getElementById(id).classList.toggle('open');}
+function phase4Next(){S.phase=5;setPhase(5);genExtras();}
+
+// ─── FASE 5: EXTRAS — 1 LLAMADA (SEO + miniatura + short juntos) ───
+async function genExtras(){
+  showLoader('load5');liSet('l5a','active');liSet('l5b','');liSet('l5c','');
+  document.getElementById('extrasOut').style.display='none';
+
+  setTimeout(function(){liSet('l5a','done');liSet('l5b','active');},700);
+  setTimeout(function(){liSet('l5b','done');liSet('l5c','active');},1400);
+
+  var titulo=S.pipeline.titulo;
+  var narResumen=S.pipeline.escenas.map(function(e){return e.narracion;}).join(' ').substring(0,400);
+
+  var prompt='Experto YouTube. '+ctx()+'\n'
+    +'Video:"'+titulo+'"\n'
+    +'SOLO JSON minificado:\n'
+    +'{"desc":"descripcion YouTube 100 palabras con bullets y CTA","tags":["t1","t2","t3","t4","t5","t6"],'
+    +'"thumb":{"comp":"composicion visual","fondo":"color/grad","texto":"3 palabras max","brief":"instruccion Canva"},'
+    +'"short":{"hook":"frase gancho 8 palabras","dev":"guion 60s ritmo rapido","cta":"llamada accion","tags":["#t1","#t2","#t3"]}}';
+  try{
+    var raw=await ai(prompt);
+    var data=parseJSON(raw,{});
+    S.extras=data;
+
+    // Narración completa
+    document.getElementById('narrFull').textContent=
+      S.pipeline.escenas.map(function(e){return '['+e.numero+'. '+e.nombre+']\n'+e.narracion;}).join('\n\n');
+
+    // SEO
+    document.getElementById('seoContent').textContent=data.desc||'Sin descripción.';
+    document.getElementById('tagCloud').innerHTML=(data.tags||[]).map(function(t){
+      return '<span class="ytag">'+t+'</span>';
+    }).join('');
+
+    // Thumbnail
+    var th=data.thumb||{};
+    document.getElementById('thumbContent').textContent=
+      'Composición: '+(th.comp||'—')+'\n\n'
+      +'Fondo: '+(th.fondo||'—')+'\n\n'
+      +'Texto miniatura: "'+(th.texto||'—')+'"\n\n'
+      +'Brief Canva: '+(th.brief||'—');
+
+    // Shorts
+    var sh=data.short||{};
+    document.getElementById('shortsContent').textContent=
+      '[Hook] '+(sh.hook||'—')+'\n\n'
+      +'[Desarrollo]\n'+(sh.dev||'—')+'\n\n'
+      +'[CTA] '+(sh.cta||'—')+'\n\n'
+      +'Hashtags: '+(sh.tags||[]).join(' ');
+
+    liSet('l5c','done');
+    setTimeout(function(){hideLoader('load5');document.getElementById('extrasOut').style.display='block';},300);
+    document.getElementById('p5sub').textContent='Generando música...';
+    // Llamada música separada — no bloquea el resto si falla
+    genMusic(titulo);
+  }catch(e){
+    hideLoader('load5');
+    document.getElementById('extrasOut').innerHTML=errBox(e.message);
+    document.getElementById('extrasOut').style.display='block';
+  }
+}
+
+// ─── MÚSICA SUNO ───
+async function genMusic(titulo){
+  liSet('l5d','active');
+  var dur=S.canal.dur;
+  var tono=S.canal.tono;
+  var nicho=S.canal.nicho;
+  var nombre=S.canal.nombre;
+  var estilo=S.canal.estilo;
+
+  var prompt='Experto en música para contenido YouTube y branding de canal. '+ctx()+'\n'
+    +'Video:"'+titulo+'"\n'
+    +'Genera 2 prompts de música para Suno.ai basados en el contexto del canal.\n'
+    +'SOLO JSON:\n'
+    +'{"jingle":{"prompt":"prompt Suno para jingle/intro 20 segundos con estilo musical detallado, BPM, instrumentos, mood, EN","letra":"letra opcional 4-6 lineas cortas en español con nombre del canal y nicho","uso":"como usarlo en el video"},'
+    +'"bg":{"prompt":"prompt Suno para musica de fondo instrumental '+dur+' min, NO VOCALS, estilo detallado, BPM, instrumentos, mood, EN","uso":"volumen y momentos donde usarla"}}';
+  try{
+    var raw=await ai(prompt);
+    var data=parseJSON(raw,{});
+    var j=data.jingle||{};
+    var b=data.bg||{};
+
+    document.getElementById('jingleContent').textContent=
+      'SUNO PROMPT:\n'+(j.prompt||'—')
+      +'\n\nLETRA SUGERIDA:\n'+(j.letra||'—')
+      +'\n\nCÓMO USARLO:\n'+(j.uso||'—');
+
+    document.getElementById('bgMusicContent').textContent=
+      'SUNO PROMPT:\n'+(b.prompt||'—')
+      +'\n\nCÓMO USARLA:\n'+(b.uso||'—');
+
+    document.getElementById('musicBox').style.display='block';
+    liSet('l5d','done');
+    document.getElementById('p5sub').textContent='Todo listo';
+  }catch(e){
+    liSet('l5d','done');
+    document.getElementById('musicBox').style.display='block';
+    document.getElementById('jingleContent').textContent='Error: '+e.message;
+    document.getElementById('p5sub').textContent='Todo listo (error en música)';
+  }
+}
+
+// ─── CALENDARIO EDITORIAL ───
+function goCalendar(){
+  S.phase=6;setPhase(6);genCalendar();
+}
+
+async function genCalendar(){
+  showLoader('load6');liSet('l6a','active');liSet('l6b','');
+  document.getElementById('calOut').style.display='none';
+  document.getElementById('p6sub').textContent='Generando plan de 30 días...';
+  setTimeout(function(){liSet('l6a','done');liSet('l6b','active');},800);
+
+  var nicho=S.canal.nicho;
+  var nombre=S.canal.nombre;
+  var tono=S.canal.tono;
+  var subs=S.canal.subs;
+  var dur=S.canal.dur;
+  var idea=S.idea?S.idea.titulo:'';
+
+  var prompt='Estratega de contenido YouTube experto. '+ctx()+'\n'
+    +'Video piloto ya producido: "'+idea+'"\n'
+    +'Genera un calendario editorial de 30 días para este canal.\n'
+    +'Frecuencia realista para '+subs+'. Videos de '+dur+' min.\n'
+    +'SOLO JSON:\n'
+    +'{"frecuencia":"X videos por semana","dias_publicacion":["Lunes","Jueves"],'
+    +'"resumen":"estrategia en 2 frases",'
+    +'"semanas":[{"semana":1,"dias":[{"dia":1,"fecha":"Lun 2","tipo":"principal","titulo":"titulo video","formato":"tutorial|lista|caso|debate|historia","kw":"keyword","nota":"tip produccion 1 frase"}]}]}'
+    +'\nIncluye 4 semanas. Mezcla formatos. Primer dia es el video piloto ya producido. JSON minificado.';
+
+  try{
+    var raw=await ai(prompt);
+    var data=parseJSON(raw,{});
+    S.calendar=data;
+    liSet('l6b','done');
+    setTimeout(function(){hideLoader('load6');renderCalendar(data);},300);
+  }catch(e){
+    hideLoader('load6');
+    document.getElementById('calOut').innerHTML=errBox(e.message);
+    document.getElementById('calOut').style.display='block';
+  }
+}
+
+var TYPE_COLOR={
+  'principal':'var(--acc)',
+  'complementario':'var(--teal)',
+  'shorts':'var(--blue)',
+  'comunidad':'var(--yellow)',
+  'tutorial':'var(--acc)',
+  'lista':'var(--teal)',
+  'caso':'var(--violet,#9f5cf7)',
+  'debate':'var(--blue)',
+  'historia':'var(--yellow)'
+};
+
+function renderCalendar(data){
+  // Stats
+  var semanas=data.semanas||[];
+  var totalVideos=semanas.reduce(function(a,s){return a+(s.dias?s.dias.length:0);},0);
+  document.getElementById('calStats').innerHTML=
+    statCard('📅','Frecuencia',data.frecuencia||'—')
+    +statCard('🎬','Videos / mes',totalVideos)
+    +statCard('📆','Días pub.',(data.dias_publicacion||[]).join(', ')||'—');
+
+  // Grid
+  var html='';
+  semanas.forEach(function(sem){
+    html+='<div style="background:var(--white);border:2px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:4px">'
+      +'<div style="background:var(--bg2);padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">'
+      +'<span style="font-family:monospace;font-size:9px;color:var(--ink4);letter-spacing:2px;text-transform:uppercase">SEMANA '+sem.semana+'</span>'
+      +'</div>';
+    (sem.dias||[]).forEach(function(d){
+      var col=TYPE_COLOR[d.formato]||TYPE_COLOR[d.tipo]||'var(--ink4)';
+      html+='<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border)">'
+        +'<div style="width:36px;height:36px;border-radius:8px;background:'+col+';display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:10px;color:#fff;font-weight:700;flex-shrink:0">'+('D'+d.dia)+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-family:sans-serif;font-weight:700;font-size:13px;color:var(--ink);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(d.titulo||'—')+'</div>'
+        +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">'
+        +'<span style="font-family:monospace;font-size:9px;padding:2px 8px;background:'+col+'22;border:1px solid '+col+'44;border-radius:3px;color:'+col+'">'+escH(d.formato||d.tipo||'')+'</span>'
+        +(d.kw?'<span style="font-family:monospace;font-size:9px;padding:2px 8px;background:var(--yellow-light);border:1px solid #e8cc00;border-radius:3px;color:#7a6a00">'+escH(d.kw)+'</span>':'')
+        +'</div>'
+        +(d.nota?'<div style="font-size:11px;color:var(--ink4);font-style:italic">'+escH(d.nota)+'</div>':'')
+        +'</div>'
+        +'<div style="font-family:monospace;font-size:9px;color:var(--ink5);flex-shrink:0">'+escH(d.fecha||'')+'</div>'
+        +'</div>';
+    });
+    html+='</div>';
+  });
+
+  if(data.resumen){
+    html+='<div style="background:var(--ink);border-radius:10px;padding:16px 20px;margin-top:4px">'
+      +'<div style="font-family:monospace;font-size:9px;color:var(--yellow);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">ESTRATEGIA</div>'
+      +'<div style="font-size:13px;color:#c0b8a8;line-height:1.7">'+escH(data.resumen)+'</div>'
+      +'</div>';
+  }
+
+  document.getElementById('calGrid').innerHTML=html;
+  document.getElementById('calOut').style.display='block';
+  document.getElementById('p6sub').textContent='Plan listo · '+totalVideos+' vídeos en 30 días';
+}
+
+function statCard(icon,label,val){
+  return '<div style="background:var(--white);border:2px solid var(--border);border-radius:10px;padding:16px;text-align:center">'
+    +'<div style="font-size:22px;margin-bottom:6px">'+icon+'</div>'
+    +'<div style="font-family:sans-serif;font-size:16px;font-weight:800;color:var(--ink);margin-bottom:2px">'+val+'</div>'
+    +'<div style="font-family:monospace;font-size:9px;color:var(--ink4);text-transform:uppercase;letter-spacing:1px">'+label+'</div>'
+    +'</div>';
+}
+
+function expCalendar(){
+  if(!S.calendar)return;
+  var t='CALENDARIO EDITORIAL · '+S.canal.nombre+'\n'+'='.repeat(50)+'\n';
+  t+='Frecuencia: '+S.calendar.frecuencia+'\n';
+  t+='Días: '+(S.calendar.dias_publicacion||[]).join(', ')+'\n';
+  t+='Estrategia: '+S.calendar.resumen+'\n\n';
+  (S.calendar.semanas||[]).forEach(function(sem){
+    t+='--- SEMANA '+sem.semana+' ---\n';
+    (sem.dias||[]).forEach(function(d){
+      t+='Día '+d.dia+' ('+d.fecha+'): '+d.titulo+'\n';
+      t+='  Formato: '+d.formato+' | KW: '+d.kw+'\n';
+      if(d.nota)t+='  Nota: '+d.nota+'\n';
+    });
+    t+='\n';
+  });
+  navigator.clipboard.writeText(t).then(function(){
+    var btn=event.target;
+    btn.textContent='✓ Copiado';
+    setTimeout(function(){btn.textContent='📋 Copiar calendario completo';},2000);
+  });
+}
+
+// ─── HISTORIAL ───
+function saveHistory(){
+  if(!S.pipeline)return;
+  var hist=loadHist();
+  hist.unshift({titulo:S.pipeline.titulo,nicho:S.canal.nicho,ts:Date.now(),
+    data:{canal:S.canal,idea:S.idea,script:S.script,pipeline:S.pipeline}});
+  if(hist.length>5)hist=hist.slice(0,5);
+  try{localStorage.setItem(HIST_KEY,JSON.stringify(hist));}catch(e){}
+  renderHist();
+}
+function loadHist(){try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]');}catch{return[];}}
+function renderHist(){
+  var hist=loadHist();
+  var list=document.getElementById('histList');
+  if(!hist.length){list.innerHTML='<div class="hist-empty">Sin vídeos generados</div>';return;}
+  list.innerHTML=hist.map(function(h,i){
+    return '<div class="hist-item" onclick="loadFromHist('+i+')">'
+      +'<div class="hist-item-title">'+h.titulo+'</div>'
+      +'<div class="hist-item-meta">'+h.nicho+' · '+new Date(h.ts).toLocaleDateString('es-ES',{day:'numeric',month:'short'})+'</div>'
+      +'</div>';
+  }).join('');
+}
+function loadFromHist(i){
+  var hist=loadHist();if(!hist[i])return;
+  var d=hist[i].data;
+  Object.assign(S,{canal:d.canal,idea:d.idea,script:d.script,pipeline:d.pipeline,extras:null});
+  document.getElementById('cNombre').value=d.canal.nombre||'';
+  document.getElementById('cNicho').value=d.canal.nicho||'';
+  document.getElementById('cAud').value=d.canal.aud||'';
+  S.phase=4;setPhase(4);renderPipeline();
+}
+
+// ─── EXPORTS ───
+function expTXT(){
+  if(!S.pipeline)return;
+  var t='YT STUDIO V3 · PIPELINE\n'+'='.repeat(50)+'\n'
+    +'CANAL: '+S.canal.nombre+' | NICHO: '+S.canal.nicho+'\nVÍDEO: '+S.pipeline.titulo+'\n'+'-'.repeat(50)+'\n\n';
+  S.pipeline.escenas.forEach(function(e){
+    t+='ESCENA '+e.numero+': '+e.nombre.toUpperCase()+' ['+e.tipo+'] — '+e.dur_seg+'s\n'
+      +'-'.repeat(40)+'\nNARRACIÓN:\n'+e.narracion+'\n\nPROMPT IMAGEN:\n'+e.prompt_imagen
+      +'\n\nDIRECCIÓN:\n'+e.nota_director+'\n\n'+'='.repeat(50)+'\n\n';
+  });
+  if(S.extras&&S.extras.desc)t+='\nSEO:\n'+S.extras.desc+'\nTAGS: '+(S.extras.tags||[]).join(', ')+'\n';
+  dl(t,'pipeline.txt','text/plain');
+}
+function expJSON(){if(!S.pipeline)return;dl(JSON.stringify({canal:S.canal,pipeline:S.pipeline,extras:S.extras},null,2),'pipeline.json','application/json');}
+function expNarr(){if(!S.pipeline)return;dl(S.pipeline.escenas.map(function(e){return '['+e.nombre+']\n'+e.narracion;}).join('\n\n'),'narracion.txt','text/plain');}
+function expPrompts(){if(!S.pipeline)return;dl(S.pipeline.escenas.map(function(e){return e.nombre+'\n'+e.prompt_imagen;}).join('\n\n---\n\n'),'prompts.txt','text/plain');}
+function dl(c,f,t){
+  // Data URI falla en artifacts con caracteres especiales (tildes, ñ)
+  // Usamos siempre el modal de copia
+  showDlModal(c,f);
+}
+function showDlModal(c,f){
+  var old=document.getElementById('dlModal');if(old)old.remove();
+  var m=document.createElement('div');m.id='dlModal';
+  m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(26,18,8,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+  var html='<div style="background:#fdfaf5;border:2px solid #d8d0c4;border-radius:14px;padding:28px;max-width:620px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:12px">';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center">';
+  html+='<strong style="font-size:15px">'+f+'</strong>';
+  html+='<button onclick="document.getElementById(&quot;dlModal&quot;).remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9c8e7a;line-height:1">x</button>';
+  html+='</div>';
+  html+='<p style="font-family:monospace;font-size:11px;color:#9c8e7a;margin:0">Selecciona todo y copia con Ctrl+A, Ctrl+C</p>';
+  html+='<textarea id="dlText" style="flex:1;min-height:280px;background:#ede8df;border:1px solid #d8d0c4;border-radius:8px;padding:12px;font-family:monospace;font-size:11px;resize:none;color:#1a1208"></textarea>';
+  html+='<button onclick="var el=document.getElementById(&quot;dlText&quot;);el.select();navigator.clipboard.writeText(el.value)" style="padding:12px;background:#ff4820;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px">Copiar al portapapeles</button>';
+  html+='</div>';
+  m.innerHTML=html;
+  document.body.appendChild(m);
+  document.getElementById('dlText').value=c;
+}
+
+function copyNarr(btn){
+  navigator.clipboard.writeText(document.getElementById('narrFull').textContent).then(function(){
+    btn.textContent='✓ COPIADA';
+    setTimeout(function(){btn.textContent='COPIAR TODO';},2000);
+  });
+}
+function copyBox(id,btn){
+  navigator.clipboard.writeText(document.getElementById(id).innerText).then(function(){
+    btn.textContent='✓';btn.classList.add('ok');
+    setTimeout(function(){btn.textContent='COPIAR';btn.classList.remove('ok');},1800);
+  });
+}
+function newVideo(){
+  Object.assign(S,{phase:1,ideas:[],idea:null,script:null,pipeline:null,extras:null});
+  S.calendar=null;
+  ['ideasGrid','scriptOut','pipeOut','extrasOut','calOut'].forEach(function(id){
+    var el=document.getElementById(id);if(el){el.innerHTML='';el.style.display='none';}
+  });
+  ['ideas-acts','script-acts','pipe-acts'].forEach(function(id){
+    var el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  setPhase(1);
+}
+function cpTxt(btn,e,text){
+  e.stopPropagation();
+  navigator.clipboard.writeText(text).then(function(){
+    btn.textContent='✓';btn.classList.add('ok');
+    setTimeout(function(){btn.textContent='COPIAR';btn.classList.remove('ok');},1800);
+  });
+}
+function escH(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function eaH(s){return (s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');}
+
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'&&S.phase===1)phase1Next();
+});
+initKey();
+renderHist();
+</script>
+</body>
+</html>
